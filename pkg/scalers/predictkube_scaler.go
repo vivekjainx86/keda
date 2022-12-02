@@ -35,8 +35,8 @@ import (
 )
 
 const (
-	predictKubeMetricType   = "External"
-	predictKubeMetricPrefix = "predictkube_metric"
+	predictKubeMetricType          = "External"
+	predictKubeDefaultMetricPrefix = "predictkube_metric"
 
 	invalidMetricTypeErr = "metric type is invalid"
 )
@@ -95,6 +95,7 @@ type predictKubeMetadata struct {
 	threshold           float64
 	activationThreshold float64
 	scalerIndex         int
+	metricName          string
 }
 
 func (s *PredictKubeScaler) setupClientConn() error {
@@ -206,7 +207,7 @@ func (s *PredictKubeScaler) Close(_ context.Context) error {
 }
 
 func (s *PredictKubeScaler) GetMetricSpecForScaling(context.Context) []v2beta2.MetricSpec {
-	metricName := kedautil.NormalizeString(fmt.Sprintf("predictkube-%s", predictKubeMetricPrefix))
+	metricName := kedautil.NormalizeString(fmt.Sprintf("predictkube-%s", s.metadata.metricName))
 	externalMetric := &v2beta2.ExternalMetricSource{
 		Metric: v2beta2.MetricIdentifier{
 			Name: GenerateMetricNameWithIndex(s.metadata.scalerIndex, metricName),
@@ -298,7 +299,7 @@ func (s *PredictKubeScaler) doQuery(ctx context.Context) ([]*commonproto.Item, e
 
 // parsePrometheusResult parsing response from prometheus server.
 func (s *PredictKubeScaler) parsePrometheusResult(result model.Value) (out []*commonproto.Item, err error) {
-	metricName := GenerateMetricNameWithIndex(s.metadata.scalerIndex, kedautil.NormalizeString(fmt.Sprintf("predictkube-%s", predictKubeMetricPrefix)))
+	metricName := GenerateMetricNameWithIndex(s.metadata.scalerIndex, kedautil.NormalizeString(fmt.Sprintf("predictkube-%s", s.metadata.metricName)))
 	switch result.Type() {
 	case model.ValVector:
 		if res, ok := result.(model.Vector); ok {
@@ -430,6 +431,12 @@ func parsePredictKubeMetadata(config *ScalerConfig) (result *predictKubeMetadata
 	} else {
 		return nil, fmt.Errorf("no threshold given")
 	}
+
+	if val, ok := config.TriggerMetadata["metricName"]; ok && val != "" {
+		meta.metricName = val
+	} else {
+		meta.metricName = predictKubeDefaultMetricPrefix
+  }
 
 	meta.activationThreshold = 0
 	if val, ok := config.TriggerMetadata["activationThreshold"]; ok {

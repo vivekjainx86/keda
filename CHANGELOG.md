@@ -121,6 +121,7 @@ None.
 - **Kafka Scaler:** Check `lagThreshold` is a positive number ([#3366](https://github.com/kedacore/keda/issues/3366))
 - **Selenium Grid Scaler:** Fix bug where edge active sessions not being properly counted ([#2709](https://github.com/kedacore/keda/issues/2709))
 - **Selenium Grid Scaler:** Fix bug where Max Sessions was not working correctly ([#3061](https://github.com/kedacore/keda/issues/3061))
+- **PredictKube Scaler** Use `metricName` value to set metric name ([#3180](https://github.com/kedacore/keda/issues/3180))
 
 ### Deprecations
 
